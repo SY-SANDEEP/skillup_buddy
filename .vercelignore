@@ -5,3 +5,4 @@ models
 seed_courses.js
 seed_course_notes.js
 test-pro-features.js
+.env
