@@ -21,11 +21,12 @@ const razorpayInstance = new Razorpay({
 app.use(cors({
   origin: function(origin, callback) {
     const allowed = [
-      'http://localhost:5500',
-      'http://localhost:3000',
-      'https://skillup-buddy.vercel.app',  // your Vercel URL
-      /\.vercel\.app$/  // any Vercel preview URL
-    ];
+    'http://localhost:5500',
+    'http://localhost:3000',
+    'https://skillupbuddy.vercel.app',
+    'https://skillupbuddy-sysandeepdev-7660s-projects.vercel.app',  // ← your exact URL
+    /\.vercel\.app$/
+];
     if (!origin || allowed.some(o => typeof o === 'string' ? o === origin : o.test(origin))) {
       callback(null, true);
     } else {
