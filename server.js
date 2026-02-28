@@ -19,9 +19,18 @@ const razorpayInstance = new Razorpay({
 // MIDDLEWARE
 // ============================================================================
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow all origins (LAN, localhost, any IP)
-    callback(null, true);
+  origin: function(origin, callback) {
+    const allowed = [
+      'http://localhost:5500',
+      'http://localhost:3000',
+      'https://skillup-buddy.vercel.app',  // your Vercel URL
+      /\.vercel\.app$/  // any Vercel preview URL
+    ];
+    if (!origin || allowed.some(o => typeof o === 'string' ? o === origin : o.test(origin))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true
 }));

@@ -1,7 +1,7 @@
 // js/userDataSync.js - COMPLETE FIXED VERSION
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000'
-    : `http://${window.location.hostname}:5000`;
+    : 'https://skillup-buddy.onrender.com';
 const UserDataSync = {
   _isSyncing: false,
   _syncQueue: [],

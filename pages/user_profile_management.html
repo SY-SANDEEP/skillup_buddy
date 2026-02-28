@@ -691,8 +691,8 @@
     document.addEventListener("DOMContentLoaded", function () {
         // ✅ FIX 1: Dynamic API_BASE - works on any PC, not just localhost
         const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:5000'
-            : `http://${window.location.hostname}:5000`;
+    ? 'http://localhost:5000'
+    : 'https://skillup-buddy.onrender.com';
 
         // ------------- AUTH CHECK -------------
         const token = localStorage.getItem("sb_token") || localStorage.getItem("skillupToken");
