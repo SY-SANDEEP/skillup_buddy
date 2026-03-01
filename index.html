@@ -607,20 +607,34 @@ async function initiateRazorpayPayment() {
 
 async function verifyPayment(paymentResponse) {
     const token = localStorage.getItem('sb_token') || localStorage.getItem('skillupToken');
+
     try {
         const response = await fetch(`${API_BASE}/api/subscription/verify`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ ...paymentResponse })
         });
+
         const data = await response.json();
         closePaymentModal();
-        if (!response.ok) throw new Error(data.message || 'Verification failed');
+
+        // ✅ NEW: check BOTH response and success flag
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Payment verification failed');
+        }
+
+        // ✅ update user
         if (data.user) {
             localStorage.setItem('sb_user', JSON.stringify(data.user));
             localStorage.setItem('skillupUser', JSON.stringify(data.user));
         }
+
+        // ✅ ONLY show success when truly verified
         showSuccessModal();
+
     } catch (error) {
         alert('Payment verification failed: ' + error.message);
     }

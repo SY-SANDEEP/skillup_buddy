@@ -866,6 +866,15 @@ app.post("/api/subscription/verify", authMiddleware, async (req, res) => {
       });
     }
 
+    // 🔒 ADD THIS AFTER fetching payment
+if (payment.amount !== 19900) {
+  console.error('❌ Amount mismatch:', payment.amount);
+  return res.status(400).json({
+    success: false,
+    message: 'Invalid payment amount'
+  });
+}
+
     const user = await User.findById(req.user._id);
     
     const startDate = new Date();
@@ -954,6 +963,15 @@ app.post("/api/subscription/verify-payment", authMiddleware, async (req, res) =>
     if (payment.status !== 'captured') {
       return res.status(400).json({ success: false, message: 'Payment not completed' });
     }
+
+    // 🔒 ADD THIS AFTER fetching payment
+if (payment.amount !== 19900) {
+  console.error('❌ Amount mismatch:', payment.amount);
+  return res.status(400).json({
+    success: false,
+    message: 'Invalid payment amount'
+  });
+}
 
     const user = await User.findById(req.user._id);
     const startDate = new Date();
