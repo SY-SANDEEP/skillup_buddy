@@ -819,83 +819,21 @@ app.post("/api/subscription/create-order", authMiddleware, async (req, res) => {
 
 // ============================================================================
 // VERIFY PAYMENT & ACTIVATE PRO
-// Handles BOTH real Razorpay payments AND demo mode payments
 // ============================================================================
 app.post("/api/subscription/verify", authMiddleware, async (req, res) => {
   try {
     const { 
       razorpay_order_id, 
       razorpay_payment_id, 
-      razorpay_signature,
-      demoMode
+      razorpay_signature
     } = req.body;
 
     console.log('🔍 Verifying payment...');
     console.log('📦 Order ID:', razorpay_order_id);
     console.log('💳 Payment ID:', razorpay_payment_id);
-    console.log('🧪 Demo Mode:', demoMode);
 
-    // ==================== DEMO MODE ====================
-    if (demoMode === true || razorpay_payment_id?.startsWith('demo_pay_')) {
-      console.log('🧪 Processing demo payment...');
-
-      const user = await User.findById(req.user._id);
-      
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 30);
-
-      user.subscription = {
-        plan: 'pro',
-        status: 'active',
-        startDate,
-        endDate,
-        razorpaySubscriptionId: razorpay_order_id || `demo_order_${Date.now()}`
-      };
-
-      await user.save();
-
-      // Save demo subscription record
-      const subscription = new Subscription({
-        userId: user._id,
-        plan: 'pro',
-        status: 'active',
-        amount: 199,
-        currency: 'INR',
-        razorpayOrderId: razorpay_order_id || `demo_order_${Date.now()}`,
-        razorpayPaymentId: razorpay_payment_id || `demo_pay_${Date.now()}`,
-        razorpaySignature: 'demo_signature',
-        startDate,
-        endDate,
-        autoRenew: false,
-        paymentHistory: [{
-          date: new Date(),
-          amount: 199,
-          paymentId: razorpay_payment_id || 'demo',
-          status: 'demo_success'
-        }]
-      });
-
-      await subscription.save();
-
-      console.log(`✅ Demo Pro activated for: ${user.email}`);
-
-      return res.json({
-        success: true,
-        message: "🎉 Demo Pro subscription activated!",
-        subscription: {
-          plan: 'pro',
-          status: 'active',
-          startDate,
-          endDate,
-          amount: 199,
-          currency: 'INR'
-        },
-        user: user.toSafeObject()
-      });
-    }
-
-    // ==================== REAL RAZORPAY PAYMENT ====================
+    // ==================== REAL RAZORPAY PAYMENT ONLY ====================
+    // Demo mode is disabled in production
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     
     const expectedSignature = crypto
@@ -995,50 +933,15 @@ app.post("/api/subscription/verify", authMiddleware, async (req, res) => {
 });
 
 // ============================================================================
-// ALIAS: /api/subscription/verify-payment → same as /api/subscription/verify
-// (In case any frontend file still uses the old URL)
+// ALIAS: /api/subscription/verify-payment → redirects to /verify (no demo mode)
 // ============================================================================
 app.post("/api/subscription/verify-payment", authMiddleware, async (req, res) => {
-  // Forward to the same handler logic by reusing req/res
-  req.url = '/api/subscription/verify';
-  
-  // Just duplicate the handler inline to keep it simple
+  // Same as /verify but without demo mode
   try {
-    const { 
-      razorpay_order_id, 
-      razorpay_payment_id, 
-      razorpay_signature,
-      demoMode
-    } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    if (demoMode === true || razorpay_payment_id?.startsWith('demo_pay_')) {
-      const user = await User.findById(req.user._id);
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 30);
-
-      user.subscription = {
-        plan: 'pro', status: 'active', startDate, endDate,
-        razorpaySubscriptionId: razorpay_order_id || `demo_order_${Date.now()}`
-      };
-      await user.save();
-
-      const subscription = new Subscription({
-        userId: user._id, plan: 'pro', status: 'active', amount: 199,
-        currency: 'INR',
-        razorpayOrderId: razorpay_order_id || `demo_order_${Date.now()}`,
-        razorpayPaymentId: razorpay_payment_id || `demo_pay_${Date.now()}`,
-        razorpaySignature: 'demo_signature', startDate, endDate, autoRenew: false,
-        paymentHistory: [{ date: new Date(), amount: 199, paymentId: razorpay_payment_id || 'demo', status: 'demo_success' }]
-      });
-      await subscription.save();
-
-      return res.json({
-        success: true,
-        message: "🎉 Demo Pro subscription activated!",
-        subscription: { plan: 'pro', status: 'active', startDate, endDate, amount: 199, currency: 'INR' },
-        user: user.toSafeObject()
-      });
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ success: false, message: 'Missing payment details' });
     }
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
