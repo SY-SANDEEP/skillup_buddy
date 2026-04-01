@@ -1248,6 +1248,7 @@ document.addEventListener('keydown', function(e) {
     }
 
     function populateFormWithExisting() {
+        if (!existingReview) return;
         document.getElementById('modalTitle').textContent = 'Edit Your Review';
         document.getElementById('reviewTitle').value = existingReview.title;
         document.getElementById('reviewComment').value = existingReview.comment;
