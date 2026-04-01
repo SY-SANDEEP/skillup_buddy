@@ -624,6 +624,9 @@ function completeQuiz() {
                 if (result.success) {
                     syncStatus.textContent = '✓ Results synced successfully!';
                     syncStatus.className = 'text-sm text-success mt-4';
+                     const currentUser = JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('skillupUser') || '{}');
+    const currentCount = currentUser.stats?.quizzesCompleted || 0;
+    await UserDataSync.updateStats({ quizzesCompleted: currentCount + 1 });
                     setTimeout(() => {
                         document.getElementById('viewResultsBtn').classList.remove('hidden');
                         document.getElementById('quizSummary').classList.remove('hidden');
