@@ -1146,15 +1146,21 @@ document.addEventListener('keydown', function(e) {
                 });
 
                 if (response.ok) {
-                    existingReview = await response.json();
-                    isEditMode = true;
-                    document.getElementById('openReviewModal').innerHTML = `
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                        Edit Your Review
-                    `;
-                }
+    const data = await response.json();
+    
+    // Only treat as existing review if it actually has content
+    if (data && data.title && data.comment && data.rating) {
+        existingReview = data;
+        isEditMode = true;
+        document.getElementById('openReviewModal').innerHTML = `
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Edit Your Review
+        `;
+    }
+    // else: new user, keep default "Write Your Review" button
+}
             } catch (error) {
                 // No existing review - that's fine
             }
