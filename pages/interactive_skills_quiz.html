@@ -603,10 +603,17 @@ function completeQuiz() {
         duration: Date.now() - quizStartTime,
         summary: generateSummaryData()
     };
-    
+
     localStorage.setItem('skillsQuizResults', JSON.stringify(quizResults));
     localStorage.removeItem('skillsQuizProgress');
-    
+
+    // Update quiz count in localStorage immediately
+    const currentUser = JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('skillupUser') || '{}');
+    const newCount = (currentUser.quizzesCompleted || 0) + 1;
+    currentUser.quizzesCompleted = newCount;
+    localStorage.setItem('sb_user', JSON.stringify(currentUser));
+    localStorage.setItem('skillupUser', JSON.stringify(currentUser));
+
     if (window.UserDataSync) {
         const syncStatus = document.createElement('p');
         syncStatus.id = 'syncStatus';
@@ -620,28 +627,15 @@ function completeQuiz() {
         const attemptSync = async () => {
             try {
                 const result = await UserDataSync.saveQuizResults(quizResults);
-                
+
                 if (result.success) {
                     syncStatus.textContent = '✓ Results synced successfully!';
                     syncStatus.className = 'text-sm text-success mt-4';
-                    // Always increment count regardless of sync status
-const currentUser = JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('skillupUser') || '{}');
-const currentCount = currentUser.quizzesCompleted || 0;
-const newCount = currentCount + 1;
 
-// Update localStorage immediately so dashboard shows it right away
-currentUser.quizzesCompleted = newCount;
-localStorage.setItem('sb_user', JSON.stringify(currentUser));
-localStorage.setItem('skillupUser', JSON.stringify(currentUser));
+                    try {
+                        await UserDataSync.updateStats({ quizzesCompleted: newCount });
+                    } catch(e) { console.warn('Stats sync failed', e); }
 
-// Try to sync to server in background
-try {
-    await UserDataSync.updateStats({ quizzesCompleted: newCount });
-} catch(e) { console.warn('Stats sync failed', e); }
-
-if (result.success) {
-    syncStatus.textContent = '✓ Results synced successfully!';
-    syncStatus.className = 'text-sm text-success mt-4';
                     setTimeout(() => {
                         document.getElementById('viewResultsBtn').classList.remove('hidden');
                         document.getElementById('quizSummary').classList.remove('hidden');
@@ -678,7 +672,6 @@ if (result.success) {
         window.location.href = 'course_recommendations_dashboard.html';
     });
 }
-
 // Enhanced generateSummaryData with validation
 function generateSummaryData() {
     const skillLevel = answers[1] || "beginner";
