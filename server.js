@@ -494,12 +494,12 @@ app.post("/api/user/quiz-results", authMiddleware, async (req, res) => {
 // Update user stats
 app.put("/api/user/stats", authMiddleware, async (req, res) => {
   try {
-    const { coursesExplored, learningHours, streakDays } = req.body;
-    const user = await User.findById(req.user._id);
-
-    if (coursesExplored !== undefined) user.coursesExplored = coursesExplored;
-    if (learningHours !== undefined) user.learningHours = learningHours;
-    if (streakDays !== undefined) user.streakDays = streakDays;
+    const { coursesExplored, learningHours, streakDays, quizzesCompleted } = req.body;
+const user = await User.findById(req.user._id);
+if (coursesExplored !== undefined) user.coursesExplored = coursesExplored;
+if (learningHours !== undefined) user.learningHours = learningHours;
+if (streakDays !== undefined) user.streakDays = streakDays;
+if (quizzesCompleted !== undefined) user.quizzesCompleted = quizzesCompleted;
 
     await user.save();
 
