@@ -624,9 +624,24 @@ function completeQuiz() {
                 if (result.success) {
                     syncStatus.textContent = '✓ Results synced successfully!';
                     syncStatus.className = 'text-sm text-success mt-4';
-                     const currentUser = JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('skillupUser') || '{}');
-    const currentCount = currentUser.quizzesCompleted || currentUser.stats?.quizzesCompleted || 0;
-    await UserDataSync.updateStats({ quizzesCompleted: currentCount + 1 });
+                    // Always increment count regardless of sync status
+const currentUser = JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('skillupUser') || '{}');
+const currentCount = currentUser.quizzesCompleted || 0;
+const newCount = currentCount + 1;
+
+// Update localStorage immediately so dashboard shows it right away
+currentUser.quizzesCompleted = newCount;
+localStorage.setItem('sb_user', JSON.stringify(currentUser));
+localStorage.setItem('skillupUser', JSON.stringify(currentUser));
+
+// Try to sync to server in background
+try {
+    await UserDataSync.updateStats({ quizzesCompleted: newCount });
+} catch(e) { console.warn('Stats sync failed', e); }
+
+if (result.success) {
+    syncStatus.textContent = '✓ Results synced successfully!';
+    syncStatus.className = 'text-sm text-success mt-4';
                     setTimeout(() => {
                         document.getElementById('viewResultsBtn').classList.remove('hidden');
                         document.getElementById('quizSummary').classList.remove('hidden');
