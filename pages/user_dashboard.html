@@ -374,7 +374,8 @@ function manageSub() {
 
         // Show local quiz count immediately while server loads
         // ✅ Use server-tracked quizzesCompleted from cached user, not hardcoded '1'
-        document.getElementById('quizzesCompleted').textContent = localUser.quizzesCompleted || (localQuiz ? '1' : '0');
+        const quizCount = localUser.quizzesCompleted ?? (localQuiz ? 1 : 0);
+document.getElementById('quizzesCompleted').textContent = quizCount;
         document.getElementById('savedCourses').textContent = localBookmarks.length;
         document.getElementById('coursesExplored').textContent = localUser.coursesExplored || localBookmarks.length;
         document.getElementById('learningHours').textContent = localUser.learningHours || (localBookmarks.length * 2);
@@ -401,7 +402,7 @@ function manageSub() {
             const u = data.user;
 
             // ✅ This is the real quiz count - increases every time user completes a quiz
-            document.getElementById('quizzesCompleted').textContent = u.quizzesCompleted || 0;
+            document.getElementById('quizzesCompleted').textContent = u.quizzesCompleted ?? (localQuiz ? 1 : 0);
 
             // ✅ Real server stats
             const serverBookmarks = data.bookmarkedCourses || localBookmarks;
