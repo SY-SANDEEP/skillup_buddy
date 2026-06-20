@@ -6,9 +6,27 @@ const crypto = require('crypto');
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const admin = require("firebase-admin");
 require("dotenv").config();
 
 const app = express();
+
+// ============================================================================
+// FIREBASE ADMIN (for verifying Google Sign-In ID tokens)
+// ============================================================================
+// Requires these env vars (from your Firebase service account JSON):
+//   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+// Get them from: Firebase Console → Project Settings → Service Accounts → Generate new private key
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      // Render/Vercel env vars store newlines as literal \n, so convert them back
+      privateKey: (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
+    }),
+  });
+}
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -213,36 +231,54 @@ app.get("/api/auth/me", authMiddleware, async (req, res) => {
 });
 
 // ============================================================================
-// FIREBASE LOGIN (Stub - in case frontend calls it)
+// FIREBASE LOGIN (Google Sign-In) — verifies the Firebase ID token
 // ============================================================================
 app.post("/api/auth/firebase-login", async (req, res) => {
   try {
-    const { email, firebaseToken, firstName, lastName, profilePhoto } = req.body;
+    const { idToken, email, displayName, photoURL } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+    if (!idToken) {
+      return res.status(400).json({ message: "idToken is required" });
     }
 
+    // Verify the token with Firebase — this is what actually proves the
+    // sign-in is real, instead of trusting whatever email the client sends
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(idToken);
+    } catch (verifyErr) {
+      console.error("Firebase token verification failed:", verifyErr);
+      return res.status(401).json({ message: "Invalid or expired Google sign-in. Please try again." });
+    }
+
+    const verifiedEmail = decoded.email || email;
+    if (!verifiedEmail) {
+      return res.status(400).json({ message: "No email associated with this Google account" });
+    }
+
+    const nameParts = (displayName || "").trim().split(" ");
+    const firstName = nameParts[0] || verifiedEmail.split("@")[0];
+    const lastName = nameParts.slice(1).join(" ") || "";
+
     // Find or create user
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email: verifiedEmail });
 
     if (!user) {
-      // Auto-create user from Firebase data
       const passwordHash = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
       user = new User({
-        email,
+        email: verifiedEmail,
         passwordHash,
-        firstName: firstName || email.split('@')[0],
-        lastName: lastName || '',
-        profilePhoto: profilePhoto || '',
+        firstName,
+        lastName,
+        profilePhoto: photoURL || '',
         subscription: {
           plan: 'free',
           status: 'active',
           startDate: new Date()
         },
         oauth: {
-          provider: 'firebase',
-          providerId: firebaseToken || ''
+          provider: 'google',
+          providerId: decoded.uid
         }
       });
       await user.save();
