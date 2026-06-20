@@ -214,9 +214,7 @@
 // Replace the existing <script> tag content with this
 
 document.addEventListener('DOMContentLoaded', function() {
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
-    : 'https://skillup-buddy.onrender.com';
+    // API_BASE is declared globally near the bottom of this file
     const form = document.getElementById('loginForm');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
@@ -449,6 +447,12 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
     
 
 <script id="dhws-dataInjector" src="../public/dhws-data-injector.js"></script>
+<!-- Shared API base for the Google sign-in script below -->
+<script>
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://skillup-buddy.onrender.com';
+</script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
